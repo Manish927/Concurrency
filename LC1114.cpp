@@ -69,3 +69,80 @@ public:
         cv.notify_all();
     }
 };
+
+//Case 2: using Volatile access specifier
+
+class Foo {
+    volatile int count;
+    
+public:
+    Foo() : count(1) {
+        
+    }
+
+    void first(function<void()> printFirst) {
+        
+        printFirst();
+        count++;
+    }
+
+    void second(function<void()> printSecond) {
+              
+        while(count != 2)
+        {
+            std::this_thread::yield();
+        }
+        
+        printSecond();
+        count++;
+    }
+
+    void third(function<void()> printThird) {
+        
+        while(count != 3)
+        {
+            std::this_thread::yield();
+        }
+        
+        printThird();
+        
+    }
+};
+
+//Case 3: Using `atomic locks`
+
+class Foo {
+    std::atomic<int> count;
+    
+public:
+    Foo() : count(1) {
+        
+    }
+
+    void first(function<void()> printFirst) {
+        
+        printFirst();
+        count.store(2, std::memory_order_release);
+    }
+
+    void second(function<void()> printSecond) {
+        
+        while(count != 2)
+        {
+            std::this_thread::yield(); // put this task to end of schedule queue
+        }
+        
+        printSecond();
+        count.store(3, std::memory_order_release);
+    }
+
+    void third(function<void()> printThird) {
+        
+        while(count != 3)
+        {
+            std::this_thread::yield();
+        }
+        
+        printThird();
+    }
+};
