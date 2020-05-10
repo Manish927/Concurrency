@@ -70,7 +70,7 @@ public:
     }
 };
 
-//Case 2 of 3: using Volatile access specifier
+//Case 2 of 3: using Volatile
 
 class Foo {
     volatile int count;
