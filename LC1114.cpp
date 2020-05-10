@@ -29,7 +29,7 @@ Note:
 We do not know how the threads will be scheduled in the operating system, even though the numbers in the input seems to imply the ordering. The input format you see is mainly to ensure our tests' comprehensiveness.
 */
 
-//Case1 0f 3: Using Mutex and Condition Variables.
+//Case1 0f 4: Using Mutex and Condition Variables.
 class Foo 
 {
     std::condition_variable cv;
@@ -70,7 +70,7 @@ public:
     }
 };
 
-//Case 2 of 3: using Volatile
+//Case 2 of 4: using Volatile
 
 class Foo {
     volatile int count;
@@ -109,8 +109,39 @@ public:
     }
 };
 
-//Case 3 0f 3: Using `atomic locks`
+//Case 3 0f 4: Using `semaphone`
+#include <semaphore.h>
+class Foo {
+    sem_t second;
+    sem_t third;
+    
+public:
+    Foo() : {
+        sem_init(&second, 0, 0);
+        sem_init(&third, 0, 0);
+    }
 
+    void first(function<void()> printFirst) {
+        
+        printFirst();
+        sem_post(&second);
+    }
+
+    void second(function<void()> printSecond) {
+        
+        sem_wait(&second);
+        printSecond();
+        sem_post(&third);
+    }
+
+    void third(function<void()> printThird) {
+        
+        sem_wait(&third)
+        printThird();
+    }
+};
+
+//Case 4 0f 4: Using `atomic`
 class Foo {
     std::atomic<int> count;
     
