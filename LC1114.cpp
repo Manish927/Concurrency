@@ -29,7 +29,7 @@ Note:
 We do not know how the threads will be scheduled in the operating system, even though the numbers in the input seems to imply the ordering. The input format you see is mainly to ensure our tests' comprehensiveness.
 */
 
-//Case1: Using Mutex and Condition Variables.
+//Case1 0f 3: Using Mutex and Condition Variables.
 class Foo 
 {
     std::condition_variable cv;
@@ -70,7 +70,7 @@ public:
     }
 };
 
-//Case 2: using Volatile access specifier
+//Case 2 of 3: using Volatile access specifier
 
 class Foo {
     volatile int count;
@@ -109,7 +109,7 @@ public:
     }
 };
 
-//Case 3: Using `atomic locks`
+//Case 3 0f 3: Using `atomic locks`
 
 class Foo {
     std::atomic<int> count;
