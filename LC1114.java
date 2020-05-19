@@ -33,7 +33,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-
 class Foo {
 
     Lock lock = new ReentrantLock();
@@ -83,4 +82,42 @@ class Foo {
     }
 }
 
+//Approach 2 of 4: using Volatile
+
+class Foo {
+
+    volatile int num = 0;
+    
+    public Foo() {
+        
+    }
+
+    public void first(Runnable printFirst) throws InterruptedException 
+    {
+         // printFirst.run() outputs "first". Do not change or remove this line.
+        printFirst.run();
+        num = 1;  
+    }
+
+    public void second(Runnable printSecond) throws InterruptedException 
+    {
+        while(num < 1){
+            Thread.yield();
+        }
+        
+        // printSecond.run() outputs "second". Do not change or remove this line.
+        printSecond.run();
+        num = 2;    
+    }
+
+    public void third(Runnable printThird) throws InterruptedException 
+    {    
+        while (num < 2){
+            Thread.yield();
+        }
+        
+        // printThird.run() outputs "third". Do not change or remove this line.
+        printThird.run();
+    }
+}
 
