@@ -125,6 +125,11 @@ public:
         sem_init(&third, 0, 0);
     }
 
+    ~Foo()
+    {
+        sem_destroy(&second);
+        sem_destroy(&third);
+    }
     void first(function<void()> printFirst) {
         
         printFirst();
