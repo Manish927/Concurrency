@@ -186,9 +186,8 @@ class Foo {
     
      public void second(Runnable printSecond) throws InterruptedException
      {
-        while (fence.get() != 1)
-        {
-            Thread.yield();
+        while (fence.get() != 1) {
+
         }
          
         printSecond.run();
@@ -198,7 +197,7 @@ class Foo {
      public void third(Runnable printThird) throws InterruptedException 
      {
         while (fence.get() != 2) {
-            Thread.yield();
+
         }
         
          printThird.run();
