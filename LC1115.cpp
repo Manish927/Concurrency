@@ -53,6 +53,11 @@ public:
         cout.tie(NULL);
     }
 
+    ~FooBar()
+    {
+        sem_destroy(&foo_sem);
+        sem_destroy(&bar_sem);
+    }
     void foo(function<void()> printFoo) 
     {    
         for (int i = 0; i < n; i++) 
