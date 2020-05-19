@@ -163,9 +163,7 @@ public:
     void second(function<void()> printSecond) {
         
         while(count != 2)
-        {
-            std::this_thread::yield(); // put this task to end of schedule queue
-        }
+        {     }
         
         printSecond();
         count.store(3, std::memory_order_release);
@@ -174,9 +172,7 @@ public:
     void third(function<void()> printThird) {
         
         while(count != 3)
-        {
-            std::this_thread::yield();
-        }
+        {     }
         
         printThird();
     }
