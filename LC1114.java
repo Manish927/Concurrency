@@ -35,50 +35,65 @@ import java.util.concurrent.locks.ReentrantLock;
 
 class Foo {
 
-    Lock lock = new ReentrantLock();
-    Condition cv1 = lock.newCondition();
-    Condition cv2 = lock.newCondition();
+    Lock lock; 
+    Condition cv;
     int num = 0;
     
     public Foo() {
-        
+        lock = new ReentrantLock();
+        cv = lock.newCondition();
     }
 
     public void first(Runnable printFirst) throws InterruptedException 
     {
         lock.lock();
-         // printFirst.run() outputs "first". Do not change or remove this line.
-        printFirst.run();
-        num = 1;
-        cv1.signal();
-        lock.unlock();
+      
+        try {
+            while (num != 0)
+            cv.await();
+          
+            // printFirst.run() outputs "first". Do not change or remove this line.
+            printFirst.run();
+            num = 1;
+            cv.signalAll();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void second(Runnable printSecond) throws InterruptedException {
         lock.lock();
         
-        while(num < 1)
+        try
         {
-            cv1.await();
+           while(num != 1)
+              cv.await();
+
+          // printSecond.run() outputs "second". Do not change or remove this line.
+          printSecond.run();
+
+          num = 2;
+          cv.signalAll();
+        } finally {
+          lock.unlock();
         }
-        // printSecond.run() outputs "second". Do not change or remove this line.
-        printSecond.run();
-        num = 2;
-        cv2.signal();
-        lock.unlock();
-        
     }
 
     public void third(Runnable printThird) throws InterruptedException {
         lock.lock();
         
-        while (num < 2)
-        {
-            cv2.await();
-        }
-        // printThird.run() outputs "third". Do not change or remove this line.
-        printThird.run();
+      try {
+          while (num != 2)
+              cv.await();
+
+          // printThird.run() outputs "third". Do not change or remove this line.
+          printThird.run();
+          num = 3;
+          num = num %3;
+          cv.signalAll();
+      } finally {
         lock.unlock();
+      }
     }
 }
 
@@ -121,3 +136,4 @@ class Foo {
     }
 }
 
+//Approach 3 0f 4: Using `semaphone`
