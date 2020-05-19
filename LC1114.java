@@ -137,3 +137,71 @@ class Foo {
 }
 
 //Approach 3 0f 4: Using `semaphone`
+class Foo {
+    
+    Semaphore second;
+    Semaphore third;
+    
+    public Foo()
+    {
+        second = new Semaphore(0);
+        third = new Semaphore(0);
+    }
+    
+     public void first(Runnable printFirst) throws InterruptedException
+     {
+         printFirst.run();
+         second.release();
+     }
+    
+     public void second(Runnable printSecond) throws InterruptedException
+     {
+        second.acquire();
+        printSecond.run();
+        third.release();
+     }
+    
+     public void third(Runnable printThird) throws InterruptedException 
+     {
+        third.acquire();
+        printThird.run();
+     }
+}
+
+//Approach 4 0f 4: Using `atomic`
+class Foo {
+    
+    private AtomicInteger fence;
+    
+    public Foo()
+    {
+        fence = new AtomicInteger(0);
+    }
+    
+     public void first(Runnable printFirst) throws InterruptedException
+     {
+         printFirst.run();
+         fence.incrementAndGet();
+     }
+    
+     public void second(Runnable printSecond) throws InterruptedException
+     {
+        while (fence.get() != 1)
+        {
+            Thread.yield();
+        }
+         
+        printSecond.run();
+        fence.incrementAndGet();
+     }
+    
+     public void third(Runnable printThird) throws InterruptedException 
+     {
+        while (fence.get() != 2) {
+            Thread.yield();
+        }
+        
+         printThird.run();
+        fence.incrementAndGet();
+     }
+}
