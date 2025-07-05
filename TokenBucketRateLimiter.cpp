@@ -19,7 +19,7 @@ API Call 3 executed!
 API Call 4 executed!
 */
 
-
+//Second program avoid deadlock
 
 #include <iostream>
 #include <queue>
@@ -148,3 +148,108 @@ int main() {
 
     return 0;
 }
+
+
+
+// second program start
+
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <iostream>
+#include <vector>
+
+class RateLimiter {
+
+private:
+	std::size_t maxTokens_;
+	size_t tokens_;
+	double refillRatePerSec_;
+	std::chrono::steady_clock::time_point lastRefillTime_;
+	std::mutex mutex_;
+	std::condition_variable cv_;
+
+
+	void refill() {
+		auto now = std::chrono::steady_clock::now();
+		double elapsed = std::chrono::duration<double>(now - lastRefillTime_).count();
+		std::size_t addTokens = static_cast<std::size_t>(elapsed * refillRatePerSec_);
+
+		if (addTokens > 0) {
+			std::unique_lock<std::mutex> lock(mutex_);
+			tokens_ = std::min(maxTokens_, tokens_ + addTokens);
+			lastRefillTime_ = now;
+			cv_.notify_all();
+		}
+	}
+
+public:
+
+	RateLimiter(size_t maxTokens, double refillRatePerSec)
+		: maxTokens_(maxTokens), tokens_(maxTokens), refillRatePerSec_(refillRatePerSec),
+		lastRefillTime_(std::chrono::steady_clock::now()) {
+	}
+
+	void acquire() {
+
+		refill();
+		{
+			std::unique_lock<std::mutex> lock(mutex_);
+			while (tokens_ == 0) {	// loop until not shutdown
+
+				auto nextRefillTime = lastRefillTime_ + std::chrono::microseconds(static_cast<int>(1e6 / refillRatePerSec_));
+				cv_.wait_until(lock, nextRefillTime, [this] {return tokens_ > 0;});
+				--tokens_;
+			}
+			
+		}
+		if (tokens_ == 0) {
+			refill();
+		}
+	}
+};
+
+
+void worker(RateLimiter& limiter, int id) {
+	for (int i = 0; i < 5; ++i) {
+		limiter.acquire();
+		std::cout << "Thread " << id << " acquired token at "
+			<< std::chrono::steady_clock::now().time_since_epoch().count() << std::endl;
+	}
+}
+
+int main() {
+	RateLimiter limiter(3, 2.0);
+	std::vector<std::thread> threads;
+
+	for (int i = 0; i < 5; ++i) {
+		threads.emplace_back(worker, std::ref(limiter), i);
+	}
+
+	for (auto& t : threads) {
+		t.join();
+	}
+
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
