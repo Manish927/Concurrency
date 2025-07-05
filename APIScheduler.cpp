@@ -1,3 +1,96 @@
+//First program is more optimized
+
+#include <queue>
+#include <functional>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+
+class Scheduler {
+public:
+    Scheduler() : stopFlag_(false) {
+        worker_ = std::thread([this] { this->run(); });
+    }
+
+    ~Scheduler() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            stopFlag_ = true;
+            cv_.notify_all();
+        }
+        if (worker_.joinable()) {
+            worker_.join();
+        }
+    }
+
+    // Schedule a task to run after a delay
+    void schedule(std::function<void()> task, std::chrono::milliseconds delay) {
+        auto execTime = std::chrono::steady_clock::now() + delay;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            tasks_.emplace(execTime, std::move(task));
+        }
+        cv_.notify_all();
+    }
+
+private:
+    using Task = std::pair<std::chrono::steady_clock::time_point, std::function<void()>>;
+    struct Compare {
+        bool operator()(const Task& a, const Task& b) {
+            return a.first > b.first;
+        }
+    };
+
+    std::priority_queue<Task, std::vector<Task>, Compare> tasks_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    std::thread worker_;
+    std::atomic<bool> stopFlag_;
+
+    void run() {
+        while (true) {
+            std::function<void()> task;
+            {
+                std::unique_lock<std::mutex> lock(mutex_);
+                if (stopFlag_ && tasks_.empty()) break;
+                if (tasks_.empty()) {
+                    cv_.wait(lock, [this] { return stopFlag_ || !tasks_.empty(); });
+                } else {
+                    auto now = std::chrono::steady_clock::now();
+                    auto nextTime = tasks_.top().first;
+                    if (cv_.wait_until(lock, nextTime, [this, now] { return stopFlag_ || !tasks_.empty() && tasks_.top().first <= std::chrono::steady_clock::now(); })) {
+                        if (stopFlag_ && tasks_.empty()) break;
+                    }
+                }
+                if (!tasks_.empty() && tasks_.top().first <= std::chrono::steady_clock::now()) {
+                    task = std::move(tasks_.top().second);
+                    tasks_.pop();
+                }
+            }
+            if (task) {
+                task();
+            }
+        }
+    }
+};
+
+int main() {
+    Scheduler scheduler;
+    scheduler.schedule([] { std::cout << "Task 1 after 1s\n"; }, std::chrono::seconds(1));
+    scheduler.schedule([] { std::cout << "Task 2 after 2s\n"; }, std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    return 0;
+}
+
+
+
+
+
+
+
+
 #include <iostream>
 #include <queue>
 #include <functional>
